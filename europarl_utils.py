@@ -33,6 +33,83 @@ from sklearn.ensemble import RandomForestClassifier
 from matplotlib.patches import Patch
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+def load_data(languages=['pt', 'en', 'de']):
+
+  dataset = EuroparlDataset(languages=languages)
+  dataset = dataset.load_data()
+
+  data_cleaner = EuroparlDataCleaner()
+
+  data_processor = EuroparlDataProcessor(languages=languages)
+
+  processed_data_1 = data_processor.process_dataframe(dataset, languages[0])
+  processed_data_2 = data_processor.process_dataframe(dataset, languages[1])
+  processed_data_3 = data_processor.process_dataframe(dataset, languages[2])
+
+  return processed_data_1, processed_data_2, processed_data_3
+
+def process_datasets(datasets):
+      processed = []
+
+      for idx, dataset in enumerate(datasets):
+
+          temp = dataset[
+              ['num_uppercase_words', 'num_lowercase_words']
+          ].copy()
+
+          temp['label'] = idx
+
+          processed.append(temp)
+
+      classification_dataset = pd.concat(
+          processed,
+          ignore_index=True
+      )
+
+      classification_dataset['label'] = (
+          classification_dataset['label']
+          .astype(int)
+      )
+
+      return classification_dataset
+
+def train_classifier(dataset, model):
+
+        X = dataset[
+            ['num_lowercase_words', 'num_uppercase_words']
+        ]
+
+        y = dataset['label']
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X,
+            y,
+            test_size=0.2,
+            random_state=42,
+            shuffle=True,
+            stratify=y
+        )
+
+        print('\n\n Training Classifier...')
+        print('-------------------------')
+        print(f'Models to be trained: {model.__class__.__name__}')
+        print('-------------------------')
+
+        print(f'Training Model {model.__class__.__name__}...')
+
+        model.fit(X_train, y_train)
+
+        y_pred = model.predict(X_test)
+
+        accuracy = accuracy_score(
+              y_test,
+              y_pred
+        )
+
+        print(f'Accuracy: {accuracy:.2%}')
+
+        return model
+
 
 class DataSource(ABC):
   @abstractmethod
